@@ -222,48 +222,6 @@ const COMMAND_LOCALES: Record<string, CommandLocales> = {
 			prompt: "このテキストの誤り、誤字、文法的な間違いをすべて修正してください。元のスタイルと意味を保持してください。"
 		}
 	},
-	tone: {
-		en: {
-			name: "Tone",
-			description: "Change tone (formal/casual/academic)",
-			prompt: "Rewrite this text in a {arg} tone. Available tones: formal, casual, academic, professional, friendly."
-		},
-		ru: {
-			name: "Тон",
-			description: "Изменить тон (формальный/разговорный)",
-			prompt: "Перепиши этот текст в {arg} тоне. Доступные тона: формальный, разговорный, академический, профессиональный, дружеский."
-		},
-		fr: {
-			name: "Ton",
-			description: "Changer le ton (formel/informel)",
-			prompt: "Réécris ce texte sur un ton {arg}. Tons disponibles: formel, informel, académique, professionnel, amical."
-		},
-		de: {
-			name: "Ton",
-			description: "Ton ändern (formell/informell)",
-			prompt: "Schreibe diesen Text in einem {arg} Ton um. Verfügbare Töne: formell, informell, akademisch, professionell, freundlich."
-		},
-		es: {
-			name: "Tono",
-			description: "Cambiar tono (formal/informal)",
-			prompt: "Reescribe este texto en un tono {arg}. Tonos disponibles: formal, informal, académico, profesional, amigable."
-		},
-		hi: {
-			name: "टोन",
-			description: "टोन बदलें (औपचारिक/अनौपचारिक)",
-			prompt: "इस टेक्स्ट को {arg} टोन में फिर से लिखो। उपलब्ध टोन: औपचारिक, अनौपचारिक, अकादमिक, पेशेवर, मैत्रीपूर्ण।"
-		},
-		zh: {
-			name: "语气",
-			description: "更改语气（正式/休闲/学术）",
-			prompt: "用{arg}语气重写此文本。可用语气：正式、休闲、学术、专业、友好。"
-		},
-		ja: {
-			name: "トーン",
-			description: "トーンを変更（フォーマル/カジュアル）",
-			prompt: "このテキストを{arg}なトーンで書き直してください。利用可能なトーン：フォーマル、カジュアル、学術的、プロフェッショナル、フレンドリー。"
-		}
-	},
 	bullets: {
 		en: {
 			name: "Bullets",
@@ -347,6 +305,48 @@ const COMMAND_LOCALES: Record<string, CommandLocales> = {
 			description: "トピックについて質問を生成",
 			prompt: "このテキストについて、トピックの理解を深めるのに役立つ思慮深い質問を生成してください。"
 		}
+	},
+	difficulty: {
+		en: {
+			name: "Difficulty",
+			description: "Adjust explanation complexity",
+			prompt: ""
+		},
+		ru: {
+			name: "Сложность",
+			description: "Изменить сложность объяснения",
+			prompt: ""
+		},
+		fr: {
+			name: "Difficulté",
+			description: "Ajuster la complexité de l'explication",
+			prompt: ""
+		},
+		de: {
+			name: "Schwierigkeit",
+			description: "Erklärungskomplexität anpassen",
+			prompt: ""
+		},
+		es: {
+			name: "Dificultad",
+			description: "Ajustar complejidad de explicación",
+			prompt: ""
+		},
+		hi: {
+			name: "कठिनाई",
+			description: "व्याख्या जटिलता समायोजित करें",
+			prompt: ""
+		},
+		zh: {
+			name: "难度",
+			description: "调整解释复杂度",
+			prompt: ""
+		},
+		ja: {
+			name: "難易度",
+			description: "説明の複雑さを調整",
+			prompt: ""
+		}
 	}
 };
 
@@ -357,9 +357,9 @@ const BUILTIN_COMMAND_IDS = [
 	{ id: "rewrite", command: "/rewrite", icon: "pencil" },
 	{ id: "expand", command: "/expand", icon: "maximize-2" },
 	{ id: "fix", command: "/fix", icon: "check-circle" },
-	{ id: "tone", command: "/tone", icon: "message-circle" },
 	{ id: "bullets", command: "/bullets", icon: "list-minus" },
-	{ id: "questions", command: "/questions", icon: "help-circle" }
+	{ id: "questions", command: "/questions", icon: "help-circle" },
+	{ id: "difficulty", command: "/difficulty", icon: "graduation-cap" }
 ];
 
 /**

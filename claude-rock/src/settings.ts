@@ -1,11 +1,15 @@
-import { App, PluginSettingTab, Setting, Modal, TextComponent } from "obsidian";
+import { App, PluginSettingTab, Setting, Modal, TextComponent, setIcon } from "obsidian";
 import type ClaudeRockPlugin from "./main";
-import type { SlashCommand, LanguageCode } from "./types";
-import { BUILTIN_COMMANDS } from "./commands";
+import type { SlashCommand, LanguageCode, ClaudeModel } from "./types";
+import { CLAUDE_MODELS } from "./types";
+import { getBuiltinCommands } from "./commands";
 import { LANGUAGE_NAMES } from "./systemPrompts";
+import { checkCLIInstalled } from "./cliDetector";
+import { getSettingsLocale, type SettingsLocale } from "./settingsLocales";
 
 export class ClaudeRockSettingTab extends PluginSettingTab {
 	plugin: ClaudeRockPlugin;
+	private locale!: SettingsLocale;
 
 	constructor(app: App, plugin: ClaudeRockPlugin) {
 		super(app, plugin);
@@ -16,23 +20,33 @@ export class ClaudeRockSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "Claude Rock Settings" });
+		// Update locale on each render
+		this.locale = getSettingsLocale(this.plugin.settings.language);
+
+		// Display usage section first
+		this.displayUsageSection(containerEl);
 
 		new Setting(containerEl)
-			.setName("Claude CLI path")
-			.setDesc("Path to the Claude Code CLI executable. Usually just 'claude' if installed globally.")
+			.setName(this.locale.cliPath)
+			.setDesc(this.locale.cliPathDesc)
 			.addText(text => text
 				.setPlaceholder("claude")
 				.setValue(this.plugin.settings.cliPath)
 				.onChange(async (value) => {
 					this.plugin.settings.cliPath = value || "claude";
 					await this.plugin.saveSettings();
+					// Refresh CLI status when path changes
+					this.checkAndDisplayCLIStatus(cliStatusEl);
 				}));
+
+		// CLI Status indicator
+		const cliStatusEl = containerEl.createDiv({ cls: "claude-rock-cli-status" });
+		this.checkAndDisplayCLIStatus(cliStatusEl);
 
 		// Language selection
 		new Setting(containerEl)
-			.setName("Assistant language")
-			.setDesc("Language for Claude's responses and system instructions")
+			.setName(this.locale.assistantLanguage)
+			.setDesc(this.locale.assistantLanguageDesc)
 			.addDropdown(dropdown => {
 				// Add all language options
 				for (const [code, name] of Object.entries(LANGUAGE_NAMES)) {
@@ -43,24 +57,59 @@ export class ClaudeRockSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.language = value as LanguageCode;
 						await this.plugin.saveSettings();
+						// Redraw settings with new language
+						this.display();
 					});
 			});
 
-		// Permissions section
-		containerEl.createEl("h3", { text: "Claude Permissions" });
+		// CLAUDE.md Editor Section
+		new Setting(containerEl)
+			.setName(this.locale.systemInstructions)
+			.setDesc(this.locale.systemInstructionsDesc)
+			.addButton(button => button
+				.setButtonText(this.locale.editButton)
+				.onClick(() => {
+					new ClaudeMdModal(this.app, this.plugin).open();
+				}));
 
-		const permissionsInfo = containerEl.createDiv({ cls: "claude-rock-settings-info" });
-		permissionsInfo.createEl("p", {
-			text: "Basic capabilities (always enabled): Reading and editing notes (.md, .canvas, .base), creating new notes."
-		});
-		permissionsInfo.createEl("p", {
+		// Default model selection
+		new Setting(containerEl)
+			.setName(this.locale.defaultModel)
+			.setDesc(this.locale.defaultModelDesc)
+			.addDropdown(dropdown => {
+				for (const model of CLAUDE_MODELS) {
+					dropdown.addOption(model.value, model.label);
+				}
+				dropdown
+					.setValue(this.plugin.settings.defaultModel)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultModel = value as ClaudeModel;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		// Deep thinking mode
+		new Setting(containerEl)
+			.setName(this.locale.deepThinking)
+			.setDesc(this.locale.deepThinkingDesc)
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.thinkingEnabled)
+				.onChange(async (value) => {
+					this.plugin.settings.thinkingEnabled = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Permissions section
+		containerEl.createEl("h3", { text: this.locale.claudePermissions });
+
+		containerEl.createEl("p", {
 			cls: "claude-rock-settings-note",
-			text: "Bash commands and .obsidian folder access are always blocked for security."
+			text: this.locale.permissionsNote
 		});
 
 		new Setting(containerEl)
-			.setName("Web Search")
-			.setDesc("Allow Claude to search the internet for information")
+			.setName(this.locale.webSearch)
+			.setDesc(this.locale.webSearchDesc)
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.permissions.webSearch)
 				.onChange(async (value) => {
@@ -69,8 +118,8 @@ export class ClaudeRockSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName("Web Fetch")
-			.setDesc("Allow Claude to read content from web pages")
+			.setName(this.locale.webFetch)
+			.setDesc(this.locale.webFetchDesc)
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.permissions.webFetch)
 				.onChange(async (value) => {
@@ -79,8 +128,8 @@ export class ClaudeRockSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName("Sub-agents (Task)")
-			.setDesc("Allow Claude to launch helper agents for complex tasks")
+			.setName(this.locale.subAgents)
+			.setDesc(this.locale.subAgentsDesc)
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.permissions.task)
 				.onChange(async (value) => {
@@ -89,17 +138,18 @@ export class ClaudeRockSettingTab extends PluginSettingTab {
 				}));
 
 		// Slash Commands section
-		containerEl.createEl("h3", { text: "Slash Commands" });
+		containerEl.createEl("h3", { text: this.locale.slashCommands });
 
 		containerEl.createEl("p", {
 			cls: "claude-rock-settings-note",
-			text: "Type / in chat to see available commands. Built-in commands can be disabled. You can also add custom commands."
+			text: this.locale.slashCommandsNote
 		});
 
 		// Built-in commands
-		containerEl.createEl("h4", { text: "Built-in Commands" });
+		containerEl.createEl("h4", { text: this.locale.builtinCommands });
 
-		for (const cmd of BUILTIN_COMMANDS) {
+		const builtinCommands = getBuiltinCommands(this.plugin.settings.language);
+		for (const cmd of builtinCommands) {
 			const isDisabled = this.plugin.settings.disabledBuiltinCommands.includes(cmd.id);
 
 			new Setting(containerEl)
@@ -121,13 +171,13 @@ export class ClaudeRockSettingTab extends PluginSettingTab {
 		}
 
 		// Custom commands
-		containerEl.createEl("h4", { text: "Custom Commands" });
+		containerEl.createEl("h4", { text: this.locale.customCommands });
 
 		new Setting(containerEl)
-			.setName("Add custom command")
-			.setDesc("Create your own slash command with a custom prompt")
+			.setName(this.locale.addCustomCommand)
+			.setDesc(this.locale.addCustomCommandDesc)
 			.addButton(button => button
-				.setButtonText("Add")
+				.setButtonText(this.locale.addButton)
 				.onClick(() => {
 					new CommandModal(this.app, this.plugin, null, () => {
 						this.display(); // Refresh the settings view
@@ -140,14 +190,14 @@ export class ClaudeRockSettingTab extends PluginSettingTab {
 				.setName(cmd.command)
 				.setDesc(cmd.description)
 				.addButton(button => button
-					.setButtonText("Edit")
+					.setButtonText(this.locale.editButton)
 					.onClick(() => {
 						new CommandModal(this.app, this.plugin, cmd, () => {
 							this.display();
 						}).open();
 					}))
 				.addButton(button => button
-					.setButtonText("Delete")
+					.setButtonText(this.locale.deleteButton)
 					.setWarning()
 					.onClick(async () => {
 						this.plugin.settings.customCommands =
@@ -157,22 +207,222 @@ export class ClaudeRockSettingTab extends PluginSettingTab {
 					}));
 		}
 
-		// Info section
-		containerEl.createEl("h3", { text: "Prerequisites" });
+		// Prerequisites section at the bottom (collapsible)
+		this.displayPrerequisites(containerEl);
+	}
 
-		const infoEl = containerEl.createDiv({ cls: "claude-rock-settings-info" });
-		infoEl.createEl("p", {
-			text: "Claude Rock requires Claude Code CLI to be installed and authenticated."
+	private displayPrerequisites(containerEl: HTMLElement): void {
+		const isDismissed = this.plugin.settings.gettingStartedDismissed;
+
+		// Collapsible header
+		const headerEl = containerEl.createDiv({ cls: "claude-rock-getting-started-header" });
+		const chevronEl = headerEl.createSpan({ cls: "claude-rock-getting-started-chevron" });
+		setIcon(chevronEl, isDismissed ? "chevron-right" : "chevron-down");
+		headerEl.createEl("h3", { text: this.locale.gettingStarted });
+
+		// Content container (collapsible)
+		const contentEl = containerEl.createDiv({ cls: "claude-rock-getting-started-content" });
+		if (isDismissed) {
+			contentEl.style.display = "none";
+		}
+
+		// Toggle on header click
+		headerEl.addEventListener("click", () => {
+			const isHidden = contentEl.style.display === "none";
+			contentEl.style.display = isHidden ? "block" : "none";
+			chevronEl.empty();
+			setIcon(chevronEl, isHidden ? "chevron-down" : "chevron-right");
 		});
 
+		const infoEl = contentEl.createDiv({ cls: "claude-rock-settings-info" });
+
 		const steps = infoEl.createEl("ol");
-		steps.createEl("li", { text: "Install: npm i -g @anthropic-ai/claude-code" });
-		steps.createEl("li", { text: "Authenticate: run 'claude' in terminal and follow OAuth flow" });
-		steps.createEl("li", { text: "Verify: run 'claude -p \"hello\"' to test" });
+
+		// Step 1: Open Terminal
+		const step1 = steps.createEl("li");
+		step1.createEl("strong", { text: this.locale.step1Title });
+		step1.createEl("br");
+		step1.createEl("span", {
+			cls: "claude-rock-settings-note",
+			text: this.locale.step1MacOS
+		});
+		step1.createEl("br");
+		step1.createEl("span", {
+			cls: "claude-rock-settings-note",
+			text: this.locale.step1Windows
+		});
+
+		// Step 2: Install CLI
+		const step2 = steps.createEl("li");
+		step2.createEl("strong", { text: this.locale.step2Title });
+		step2.createEl("br");
+		step2.createEl("code", { text: "npm i -g @anthropic-ai/claude-code" });
+
+		// Step 3: Wait and run claude
+		const step3 = steps.createEl("li");
+		step3.createEl("strong", { text: this.locale.step3Title });
+		step3.createEl("br");
+		step3.createEl("code", { text: "claude" });
+
+		// Step 4: Choose login method
+		const step4 = steps.createEl("li");
+		step4.createEl("strong", { text: this.locale.step4Title });
+		step4.createEl("br");
+		step4.createEl("span", {
+			cls: "claude-rock-settings-note",
+			text: this.locale.step4Note
+		});
+
+		// Step 5: Complete auth
+		const step5 = steps.createEl("li");
+		step5.createEl("strong", { text: this.locale.step5Title });
+		step5.createEl("br");
+		step5.createEl("span", {
+			cls: "claude-rock-settings-note",
+			text: this.locale.step5Note
+		});
+
+		// Step 6: Enter auth code
+		const step6 = steps.createEl("li");
+		step6.createEl("strong", { text: this.locale.step6Title });
+		step6.createEl("br");
+		step6.createEl("span", {
+			cls: "claude-rock-settings-note",
+			text: this.locale.step6Note
+		});
+
+		// Step 7: Grant permissions
+		const step7 = steps.createEl("li");
+		step7.createEl("strong", { text: this.locale.step7Title });
+		step7.createEl("br");
+		step7.createEl("span", {
+			cls: "claude-rock-settings-note",
+			text: this.locale.step7Note
+		});
+
+		// Step 8: Return
+		const step8 = steps.createEl("li");
+		step8.createEl("strong", { text: this.locale.step8Title });
 
 		infoEl.createEl("p", {
 			cls: "claude-rock-settings-note",
-			text: "Note: You need an active Claude Pro or Max subscription."
+			text: this.locale.subscriptionNote
+		});
+
+		// "Already Done" button
+		const buttonContainer = contentEl.createDiv({ cls: "claude-rock-getting-started-actions" });
+		const doneBtn = buttonContainer.createEl("button", {
+			cls: "mod-cta",
+			text: this.locale.alreadyDoneButton
+		});
+		doneBtn.addEventListener("click", async () => {
+			this.plugin.settings.gettingStartedDismissed = true;
+			await this.plugin.saveSettings();
+			contentEl.style.display = "none";
+			chevronEl.empty();
+			setIcon(chevronEl, "chevron-right");
+		});
+	}
+
+	private displayUsageSection(containerEl: HTMLElement): void {
+		const usageSection = containerEl.createDiv({ cls: "claude-rock-usage-section" });
+		usageSection.createEl("h3", { text: this.locale.usageStatistics });
+
+		// Calculate stats from plugin sessions
+		const stats = this.calculateUsageStats();
+
+		// Inline compact format
+		const inline = usageSection.createDiv({ cls: "claude-rock-stats-inline" });
+		this.createStatInline(inline, this.locale.today, this.formatTokens(stats.todayTokens));
+		this.createStatInline(inline, this.locale.week, this.formatTokens(stats.weekTokens));
+		this.createStatInline(inline, this.locale.month, this.formatTokens(stats.monthTokens));
+	}
+
+	private calculateUsageStats(): { todayTokens: number; weekTokens: number; monthTokens: number } {
+		const now = new Date();
+		const todayStr = now.toISOString().split("T")[0] as string;
+
+		// Week start (Monday)
+		const weekStart = new Date(now);
+		weekStart.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+		weekStart.setHours(0, 0, 0, 0);
+
+		// Month start
+		const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+		let todayTokens = 0;
+		let weekTokens = 0;
+		let monthTokens = 0;
+
+		const tokenHistory = this.plugin.getTokenHistory();
+
+		for (const [dateStr, tokens] of Object.entries(tokenHistory)) {
+			const date = new Date(dateStr);
+
+			if (dateStr === todayStr) {
+				todayTokens += tokens;
+			}
+			if (date >= weekStart) {
+				weekTokens += tokens;
+			}
+			if (date >= monthStart) {
+				monthTokens += tokens;
+			}
+		}
+
+		return { todayTokens, weekTokens, monthTokens };
+	}
+
+	private createStatInline(container: HTMLElement, label: string, value: string): void {
+		const item = container.createDiv({ cls: "claude-rock-stat-inline" });
+		item.createSpan({ cls: "claude-rock-stat-inline-label", text: label });
+		item.createSpan({ cls: "claude-rock-stat-inline-value", text: value });
+	}
+
+	private formatTokens(tokens: number): string {
+		if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
+		if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(0)}K`;
+		return String(tokens);
+	}
+
+	private async checkAndDisplayCLIStatus(container: HTMLElement): Promise<void> {
+		container.empty();
+		container.createEl("span", {
+			cls: "claude-rock-cli-status-checking",
+			text: this.locale.checkingCli
+		});
+
+		const status = await checkCLIInstalled(this.plugin.settings.cliPath);
+
+		container.empty();
+
+		if (status.installed) {
+			// CLI Found
+			const foundEl = container.createDiv({ cls: "claude-rock-cli-status-item claude-rock-cli-status-success" });
+			const iconSpan = foundEl.createSpan({ cls: "claude-rock-cli-status-icon" });
+			setIcon(iconSpan, "check-circle");
+			foundEl.createSpan({ text: this.locale.cliFound.replace("{version}", status.version || "?") });
+		} else {
+			// CLI Not Found
+			const errorEl = container.createDiv({ cls: "claude-rock-cli-status-item claude-rock-cli-status-error" });
+			const iconSpan = errorEl.createSpan({ cls: "claude-rock-cli-status-icon" });
+			setIcon(iconSpan, "x-circle");
+			errorEl.createSpan({ text: this.locale.cliNotFound });
+
+			// Installation hint
+			container.createEl("p", {
+				cls: "claude-rock-settings-note",
+				text: this.locale.installWith
+			});
+		}
+
+		// Refresh button
+		const refreshBtn = container.createEl("button", {
+			text: this.locale.refreshButton,
+			cls: "claude-rock-cli-refresh-btn"
+		});
+		refreshBtn.addEventListener("click", () => {
+			this.checkAndDisplayCLIStatus(container);
 		});
 	}
 }
@@ -189,6 +439,10 @@ class CommandModal extends Modal {
 	private commandInput!: TextComponent;
 	private descInput!: TextComponent;
 
+	private get locale(): SettingsLocale {
+		return getSettingsLocale(this.plugin.settings.language);
+	}
+
 	constructor(app: App, plugin: ClaudeRockPlugin, command: SlashCommand | null, onSave: () => void) {
 		super(app);
 		this.plugin = plugin;
@@ -201,59 +455,59 @@ class CommandModal extends Modal {
 		contentEl.empty();
 
 		contentEl.createEl("h2", {
-			text: this.command ? "Edit Command" : "New Custom Command"
+			text: this.command ? this.locale.editCommand : this.locale.newCustomCommand
 		});
 
 		// Name field
 		new Setting(contentEl)
-			.setName("Name")
-			.setDesc("Display name for the command")
+			.setName(this.locale.nameField)
+			.setDesc(this.locale.nameFieldDesc)
 			.addText(text => {
 				this.nameInput = text;
-				text.setPlaceholder("My Command")
+				text.setPlaceholder(this.locale.namePlaceholder)
 					.setValue(this.command?.name ?? "");
 			});
 
 		// Command field
 		new Setting(contentEl)
-			.setName("Command")
-			.setDesc("The slash command trigger (e.g., /mycommand)")
+			.setName(this.locale.commandField)
+			.setDesc(this.locale.commandFieldDesc)
 			.addText(text => {
 				this.commandInput = text;
-				text.setPlaceholder("/mycommand")
+				text.setPlaceholder(this.locale.commandPlaceholder)
 					.setValue(this.command?.command ?? "/");
 			});
 
 		// Description field
 		new Setting(contentEl)
-			.setName("Description")
-			.setDesc("Short description shown in autocomplete")
+			.setName(this.locale.descriptionField)
+			.setDesc(this.locale.descriptionFieldDesc)
 			.addText(text => {
 				this.descInput = text;
-				text.setPlaceholder("What this command does")
+				text.setPlaceholder(this.locale.descriptionPlaceholder)
 					.setValue(this.command?.description ?? "");
 			});
 
 		// Prompt field
 		const promptSetting = new Setting(contentEl)
-			.setName("Prompt")
-			.setDesc("The prompt to send to Claude. Use {arg} for command arguments (e.g., '/mycommand hello' would replace {arg} with 'hello')");
+			.setName(this.locale.promptField)
+			.setDesc(this.locale.promptFieldDesc);
 
 		const promptContainer = contentEl.createDiv({ cls: "claude-rock-prompt-container" });
 		const promptTextarea = promptContainer.createEl("textarea", {
 			cls: "claude-rock-prompt-textarea",
-			attr: { rows: "4", placeholder: "Enter the prompt..." }
+			attr: { rows: "4", placeholder: this.locale.promptPlaceholder }
 		});
 		promptTextarea.value = this.command?.prompt ?? "";
 
 		// Buttons
 		const buttonContainer = contentEl.createDiv({ cls: "claude-rock-modal-buttons" });
 
-		const cancelBtn = buttonContainer.createEl("button", { text: "Cancel" });
+		const cancelBtn = buttonContainer.createEl("button", { text: this.locale.cancelButton });
 		cancelBtn.addEventListener("click", () => this.close());
 
 		const saveBtn = buttonContainer.createEl("button", {
-			text: "Save",
+			text: this.locale.saveButton,
 			cls: "mod-cta"
 		});
 		saveBtn.addEventListener("click", async () => {
@@ -306,6 +560,70 @@ class CommandModal extends Modal {
 		await this.plugin.saveSettings();
 		this.onSave();
 		this.close();
+	}
+
+	onClose(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+	}
+}
+
+/**
+ * Modal for editing CLAUDE.md system instructions
+ */
+class ClaudeMdModal extends Modal {
+	private plugin: ClaudeRockPlugin;
+	private textarea!: HTMLTextAreaElement;
+
+	private get locale(): SettingsLocale {
+		return getSettingsLocale(this.plugin.settings.language);
+	}
+
+	constructor(app: App, plugin: ClaudeRockPlugin) {
+		super(app);
+		this.plugin = plugin;
+	}
+
+	async onOpen(): Promise<void> {
+		const { contentEl } = this;
+		contentEl.empty();
+		contentEl.addClass("claude-rock-claudemd-modal");
+
+		contentEl.createEl("h2", { text: this.locale.systemInstructionsTitle });
+
+		contentEl.createEl("p", {
+			cls: "claude-rock-settings-note",
+			text: this.locale.systemInstructionsModalDesc
+		});
+
+		// Textarea container
+		const container = contentEl.createDiv({ cls: "claude-rock-claudemd-container" });
+		this.textarea = container.createEl("textarea", {
+			cls: "claude-rock-claudemd-textarea",
+			attr: { rows: "16", placeholder: this.locale.loadingPlaceholder }
+		});
+
+		// Load current content
+		const content = await this.plugin.readClaudeMd();
+		this.textarea.value = content || this.plugin.getDefaultClaudeMdContent();
+
+		// Buttons
+		const buttonContainer = contentEl.createDiv({ cls: "claude-rock-modal-buttons" });
+
+		const resetBtn = buttonContainer.createEl("button", { text: this.locale.resetToDefaultButton });
+		resetBtn.addEventListener("click", async () => {
+			const defaultContent = this.plugin.getDefaultClaudeMdContent();
+			this.textarea.value = defaultContent;
+		});
+
+		const saveBtn = buttonContainer.createEl("button", {
+			text: this.locale.saveButton,
+			cls: "mod-cta"
+		});
+		saveBtn.addEventListener("click", async () => {
+			await this.plugin.writeClaudeMd(this.textarea.value);
+			this.close();
+		});
 	}
 
 	onClose(): void {

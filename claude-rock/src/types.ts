@@ -20,6 +20,23 @@ export interface ResultMessage {
 	duration_ms: number;
 	duration_api_ms: number;
 	num_turns: number;
+	// Usage stats (cumulative for session) - snake_case from CLI
+	usage?: {
+		input_tokens: number;
+		output_tokens: number;
+		cache_read_input_tokens: number;
+		cache_creation_input_tokens: number;
+	};
+}
+
+export interface CompactBoundaryMessage {
+	type: "system";
+	subtype: "compact_boundary";
+	session_id: string;
+	compact_metadata: {
+		trigger: "manual" | "auto";
+		pre_tokens: number;
+	};
 }
 
 export interface ConversationMessage {
@@ -55,11 +72,22 @@ export interface ToolResultBlock {
 	content: string;
 }
 
-export type CLIMessage = InitMessage | ResultMessage | ConversationMessage;
+export type CLIMessage = InitMessage | ResultMessage | ConversationMessage | CompactBoundaryMessage;
 
 // ============================================================================
 // UI State Types
 // ============================================================================
+
+// Context for selected text with position info for precise replacement
+export interface SelectionContext {
+	content: string;      // Selected text content
+	source: string;       // Source file name (display)
+	filePath: string;     // Full path to source file
+	startLine: number;    // Start line (0-based)
+	startCh: number;      // Start character in line
+	endLine: number;      // End line
+	endCh: number;        // End character in line
+}
 
 export interface ChatMessage {
 	id: string;
@@ -68,6 +96,8 @@ export interface ChatMessage {
 	timestamp: number;
 	isStreaming?: boolean;
 	isError?: boolean;
+	thinkingSteps?: ToolUseBlock[];  // Tool steps performed for this message
+	selectionContext?: SelectionContext;  // Selection context for this response (for replace/append)
 }
 
 export interface ChatSession {
@@ -76,6 +106,8 @@ export interface ChatSession {
 	messages: ChatMessage[];
 	createdAt: number;
 	title?: string;  // Auto-generated from first message
+	model?: ClaudeModel;  // Model used for this session
+	tokenStats?: SessionTokenStats;  // Token statistics for this session
 }
 
 // ============================================================================
@@ -110,6 +142,15 @@ export interface SlashCommand {
 // Re-export LanguageCode for convenience
 export type { LanguageCode } from "./systemPrompts";
 
+// Claude model types
+export type ClaudeModel = "claude-haiku-4-5-20251001" | "claude-sonnet-4-5-20250929" | "claude-opus-4-5-20251101";
+
+export const CLAUDE_MODELS: { value: ClaudeModel; label: string }[] = [
+	{ value: "claude-haiku-4-5-20251001", label: "Haiku 4.5" },
+	{ value: "claude-sonnet-4-5-20250929", label: "Sonnet 4.5" },
+	{ value: "claude-opus-4-5-20251101", label: "Opus 4.5" }
+];
+
 export interface ClaudePermissions {
 	webSearch: boolean;
 	webFetch: boolean;
@@ -122,10 +163,14 @@ export interface ClaudeRockSettings {
 	permissions: ClaudePermissions;
 	customCommands: SlashCommand[];
 	disabledBuiltinCommands: string[];  // IDs of disabled built-in commands
+	defaultModel: ClaudeModel;
+	thinkingEnabled: boolean;  // Enable extended thinking mode by default
+	tokenHistory: Record<string, number>;  // date -> tokens used that day
+	gettingStartedDismissed: boolean;  // Whether the Getting Started section is collapsed
 }
 
 export const DEFAULT_SETTINGS: ClaudeRockSettings = {
-	cliPath: "/usr/local/bin/claude",
+	cliPath: "claude",
 	language: "en",
 	permissions: {
 		webSearch: false,
@@ -133,5 +178,92 @@ export const DEFAULT_SETTINGS: ClaudeRockSettings = {
 		task: false
 	},
 	customCommands: [],
-	disabledBuiltinCommands: []
+	disabledBuiltinCommands: [],
+	defaultModel: "claude-haiku-4-5-20251001",
+	thinkingEnabled: false,
+	tokenHistory: {},
+	gettingStartedDismissed: false
 };
+
+// ============================================================================
+// Service Event Types (for parallel sessions)
+// ============================================================================
+
+export interface StreamingEvent {
+	sessionId: string;
+	text: string;
+}
+
+export interface CompleteEvent {
+	sessionId: string;
+	code: number | null;
+}
+
+export interface InitEvent {
+	sessionId: string;
+	cliSessionId: string;
+}
+
+export interface AssistantEvent {
+	sessionId: string;
+	message: ConversationMessage;
+}
+
+export interface ResultEvent {
+	sessionId: string;
+	result: ResultMessage;
+}
+
+export interface ErrorEvent {
+	sessionId: string;
+	error: string;
+}
+
+// ============================================================================
+// Context Tracking Types
+// ============================================================================
+
+export interface SessionTokenStats {
+	inputTokens: number;
+	outputTokens: number;
+	contextWindow: number;
+	cacheReadTokens: number;
+	compactCount: number;
+	lastCompactPreTokens: number | null;
+}
+
+export interface ContextUsage {
+	used: number;        // current tokens
+	limit: number;       // effective limit (60%)
+	nominal: number;     // full window size
+	percentage: number;  // 0-100
+}
+
+export interface ContextUpdateEvent {
+	sessionId: string;
+	stats: SessionTokenStats;
+	usage: ContextUsage;
+}
+
+export interface CompactEvent {
+	sessionId: string;
+	trigger: "manual" | "auto";
+	preTokens: number;
+}
+
+export interface ToolUseEvent {
+	sessionId: string;
+	tool: ToolUseBlock;
+}
+
+export interface ToolResultEvent {
+	sessionId: string;
+	result: ToolResultBlock;
+}
+
+// Pending message for background sessions
+export interface PendingMessage {
+	text: string;
+	tools: ToolUseBlock[];
+}
+

@@ -49,11 +49,18 @@
 	color: var(--text-normal);
 }
 
-/* Session Dropdown */
-.claude-rock-session-dropdown {
+/* Custom Session Dropdown */
+.claude-rock-session-dropdown-custom {
+	position: relative;
 	flex: 1;
 	min-width: 0;
-	max-width: 200px;
+	max-width: 400px;
+}
+
+.claude-rock-session-trigger {
+	display: flex;
+	align-items: center;
+	gap: 4px;
 	padding: 6px 10px;
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
@@ -61,25 +68,137 @@
 	color: var(--text-normal);
 	font-size: 13px;
 	cursor: pointer;
-	text-overflow: ellipsis;
-	overflow: hidden;
-	white-space: nowrap;
+	transition: all 0.15s ease;
 }
 
-.claude-rock-session-dropdown:hover {
+.claude-rock-session-trigger:hover {
 	border-color: var(--interactive-accent);
 }
 
-.claude-rock-session-dropdown:focus {
-	outline: none;
+.claude-rock-session-trigger-open {
 	border-color: var(--interactive-accent);
 	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
 }
 
-.claude-rock-session-dropdown option {
+.claude-rock-session-trigger-text {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.claude-rock-session-trigger-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-muted);
+	transition: transform 0.15s ease;
+}
+
+.claude-rock-session-trigger-open .claude-rock-session-trigger-icon {
+	transform: rotate(180deg);
+}
+
+.claude-rock-session-list {
+	display: none;
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	right: 0;
+	max-height: 300px;
+	overflow-y: auto;
 	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	z-index: 100;
+}
+
+.claude-rock-session-list-open {
+	display: block;
+}
+
+.claude-rock-session-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	cursor: pointer;
+	transition: background 0.1s ease;
+}
+
+.claude-rock-session-item:hover {
+	background: var(--background-modifier-hover);
+}
+
+.claude-rock-session-item-active {
+	background: var(--background-secondary);
+}
+
+.claude-rock-session-title {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 13px;
 	color: var(--text-normal);
-	padding: 4px 8px;
+}
+
+.claude-rock-session-delete {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px;
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	color: var(--text-muted);
+	cursor: pointer;
+	opacity: 0;
+	transition: all 0.15s ease;
+}
+
+.claude-rock-session-item:hover .claude-rock-session-delete {
+	opacity: 1;
+}
+
+.claude-rock-session-delete:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-error);
+}
+
+/* Session running indicator (spinner) */
+.claude-rock-session-spinner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	color: var(--interactive-accent);
+	animation: claude-rock-spin 1s linear infinite;
+	flex-shrink: 0;
+}
+
+.claude-rock-session-item-running {
+	background: var(--background-secondary-alt);
+}
+
+@keyframes claude-rock-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+
+/* Session list scrollbar */
+.claude-rock-session-list::-webkit-scrollbar {
+	width: 6px;
+}
+
+.claude-rock-session-list::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.claude-rock-session-list::-webkit-scrollbar-thumb {
+	background: var(--background-modifier-border);
+	border-radius: 3px;
 }
 
 /* Messages Area */
@@ -95,26 +214,70 @@
 /* Welcome Message */
 .claude-rock-welcome {
 	text-align: center;
-	padding: 32px 16px;
+	padding: 40px 24px;
+	color: var(--text-muted);
+	max-width: 400px;
+	margin: 0 auto;
+}
+
+.claude-rock-welcome-title {
+	margin: 0 0 8px 0;
+	color: var(--text-normal);
+	font-size: 22px;
+	font-weight: 600;
+}
+
+.claude-rock-welcome-subtitle {
+	margin: 0 0 24px 0;
+	font-size: 14px;
 	color: var(--text-muted);
 }
 
-.claude-rock-welcome h3 {
-	margin: 0 0 12px 0;
-	color: var(--text-normal);
-	font-size: 18px;
+.claude-rock-welcome-features {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-bottom: 24px;
+	text-align: left;
 }
 
-.claude-rock-welcome p {
-	margin: 8px 0;
-	font-size: 14px;
-	line-height: 1.5;
+.claude-rock-welcome-feature {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 14px;
+	background: var(--background-secondary);
+	border-radius: 8px;
+	font-size: 13px;
+	color: var(--text-normal);
+}
+
+.claude-rock-welcome-feature-icon {
+	display: flex;
+	color: var(--interactive-accent);
+	flex-shrink: 0;
+}
+
+.claude-rock-welcome-feature-icon svg {
+	width: 18px;
+	height: 18px;
 }
 
 .claude-rock-welcome-hint {
 	font-size: 12px;
-	opacity: 0.7;
-	margin-top: 16px !important;
+	color: var(--text-muted);
+	margin: 0 0 8px 0;
+	padding: 8px 12px;
+	background: var(--background-secondary-alt);
+	border-radius: 6px;
+	display: inline-block;
+}
+
+.claude-rock-welcome-joke {
+	font-size: 12px;
+	color: var(--text-faint);
+	margin: 16px 0 0 0;
+	font-style: italic;
 }
 
 /* Message Bubbles */
@@ -149,52 +312,57 @@
 	border-radius: 8px;
 }
 
-/* Message Actions (Copy button) */
-.claude-rock-message-assistant {
-	position: relative;
-}
-
-.claude-rock-message-actions {
-	position: absolute;
-	top: 8px;
-	right: 8px;
-	opacity: 0;
-	transition: opacity 0.15s ease;
-}
-
-.claude-rock-message-assistant:hover .claude-rock-message-actions {
-	opacity: 1;
-}
-
-/* Message action buttons */
+/* Message Actions - buttons under message */
 .claude-rock-message-actions {
 	display: flex;
-	gap: 4px;
+	gap: 8px;
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid var(--background-modifier-border);
+	flex-wrap: wrap;
 }
 
-.claude-rock-action-btn-small {
-	width: 28px;
-	height: 28px;
-	padding: 0;
-	background: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 4px;
-	color: var(--text-muted);
-	cursor: pointer;
+/* Action buttons with icon + text */
+.claude-rock-action-btn-with-text {
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	gap: 6px;
+	padding: 6px 12px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	color: var(--text-muted);
+	cursor: pointer;
+	font-size: 12px;
+	font-family: var(--font-text);
 	transition: all 0.15s ease;
 }
 
-.claude-rock-action-btn-small:hover {
+.claude-rock-action-btn-with-text:hover {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
+	border-color: var(--interactive-accent);
+}
+
+.claude-rock-action-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+}
+
+.claude-rock-action-text {
+	white-space: nowrap;
 }
 
 .claude-rock-action-btn-success {
 	color: var(--text-success);
 	border-color: var(--text-success);
+}
+
+.claude-rock-action-btn-success .claude-rock-action-icon {
+	color: var(--text-success);
 }
 
 /* Expanded prompt for slash commands */
@@ -243,25 +411,20 @@
 	border-radius: 4px;
 }
 
-/* Streaming indicator with cursor */
-.claude-rock-message-streaming .claude-rock-message-content::after {
-	content: "";
-	display: inline-block;
-	width: 2px;
-	height: 1em;
-	background: var(--text-accent);
-	margin-left: 2px;
-	vertical-align: text-bottom;
-	animation: claude-rock-cursor-blink 0.8s ease-in-out infinite;
+/* KILL ALL CURSORS - no cursor anywhere in messages */
+.claude-rock-message-content,
+.claude-rock-message-content *,
+.claude-rock-message *,
+.claude-rock-messages-container * {
+	caret-color: transparent !important;
+	outline: none !important;
 }
 
-@keyframes claude-rock-cursor-blink {
-	0%, 50% {
-		opacity: 1;
-	}
-	51%, 100% {
-		opacity: 0;
-	}
+.claude-rock-message-content [contenteditable],
+.claude-rock-message-content [contenteditable="true"] {
+	caret-color: transparent !important;
+	-webkit-user-modify: read-only !important;
+	user-modify: read-only !important;
 }
 
 /* Loading dots */
@@ -298,6 +461,16 @@
 	}
 }
 
+/* Hide caret during streaming */
+.claude-rock-message-streaming .claude-rock-message-content {
+	caret-color: transparent;
+	user-select: none;
+}
+
+.claude-rock-message-streaming .claude-rock-message-content * {
+	caret-color: transparent;
+}
+
 /* Status Bar */
 .claude-rock-status {
 	padding: 8px 16px;
@@ -327,9 +500,9 @@
 
 .claude-rock-input {
 	width: 100%;
-	min-height: 60px;
+	min-height: 38px;
 	max-height: 200px;
-	padding: 12px;
+	padding: 8px 12px;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 8px;
 	background: var(--background-primary);
@@ -337,7 +510,8 @@
 	font-family: var(--font-text);
 	font-size: 14px;
 	line-height: 1.5;
-	resize: vertical;
+	resize: none;
+	overflow-y: hidden;
 }
 
 .claude-rock-input:focus {
@@ -358,13 +532,9 @@
 /* Context Indicator */
 .claude-rock-context-indicator {
 	display: none;
-	align-items: center;
+	flex-wrap: wrap;
 	gap: 6px;
-	padding: 6px 10px;
-	background: var(--background-secondary-alt);
-	border-radius: 6px;
-	font-size: 12px;
-	color: var(--text-muted);
+	padding: 0;
 	margin-bottom: 8px;
 }
 
@@ -383,26 +553,109 @@
 	text-overflow: ellipsis;
 	white-space: nowrap;
 	max-width: 200px;
+	flex: 1;
+}
+
+.claude-rock-context-remove {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-left: 4px;
+	padding: 2px;
+	background: transparent;
+	border: none;
+	border-radius: 4px;
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.claude-rock-context-remove:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-error);
 }
 
 .claude-rock-button-container {
 	display: flex;
-	justify-content: flex-end;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+}
+
+.claude-rock-button-group {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* Model Selector */
+.claude-rock-model-selector {
+	display: flex;
+	align-items: center;
+}
+
+.claude-rock-model-select {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	padding: 6px 28px 6px 10px;
+	background-color: var(--background-primary);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 8px center;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	color: var(--text-normal);
+	font-size: 12px;
+	font-family: var(--font-text);
+	cursor: pointer;
+	min-width: 100px;
+	line-height: 1.4;
+}
+
+.claude-rock-model-select option {
+	background: var(--background-primary);
+	color: var(--text-normal);
+	padding: 8px;
+}
+
+.claude-rock-model-select:hover {
+	border-color: var(--interactive-accent);
+}
+
+.claude-rock-model-select:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.claude-rock-model-select:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.claude-rock-model-select:disabled:hover {
+	border-color: var(--background-modifier-border);
 }
 
 .claude-rock-send-btn {
-	width: 36px;
-	height: 36px;
+	width: 32px;
+	height: 32px;
 	padding: 0;
 	background: var(--interactive-accent);
 	color: var(--text-on-accent);
 	border: none;
-	border-radius: 50%;
+	border-radius: 6px;
 	cursor: pointer;
 	transition: background 0.15s ease, transform 0.1s ease;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+}
+
+.claude-rock-send-btn svg {
+	width: 16px;
+	height: 16px;
 }
 
 .claude-rock-send-btn:hover {
@@ -421,6 +674,30 @@
 .claude-rock-send-btn-stop:hover {
 	background: var(--text-error);
 	opacity: 0.9;
+}
+
+/* Loading state with spinner */
+@keyframes claude-rock-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+
+.claude-rock-send-btn-loading {
+	background: var(--background-modifier-border);
+	color: var(--text-muted);
+}
+
+.claude-rock-send-btn-loading svg {
+	animation: claude-rock-spin 1s linear infinite;
+}
+
+.claude-rock-send-btn-loading:hover {
+	background: var(--text-error);
+	color: var(--text-on-accent);
+}
+
+.claude-rock-send-btn-loading:hover svg {
+	animation: none;
 }
 
 /* Settings Page */
@@ -450,6 +727,48 @@
 	color: var(--text-muted);
 	font-size: 13px;
 	font-style: italic;
+}
+
+/* Getting Started Collapsible Section */
+.claude-rock-getting-started-header {
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	user-select: none;
+	margin-top: 24px;
+}
+
+.claude-rock-getting-started-header:hover {
+	opacity: 0.8;
+}
+
+.claude-rock-getting-started-header h3 {
+	margin: 0;
+}
+
+.claude-rock-getting-started-chevron {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	margin-right: 8px;
+	color: var(--text-muted);
+}
+
+.claude-rock-getting-started-chevron svg {
+	width: 16px;
+	height: 16px;
+}
+
+.claude-rock-getting-started-content {
+	margin-top: 8px;
+}
+
+.claude-rock-getting-started-actions {
+	margin-top: 16px;
+	display: flex;
+	justify-content: flex-end;
 }
 
 /* Scrollbar styling */
@@ -547,6 +866,53 @@
 	white-space: nowrap;
 }
 
+/* Autocomplete separator */
+.claude-rock-autocomplete-separator {
+	height: 1px;
+	background: var(--background-modifier-border);
+	margin: 6px 0;
+}
+
+/* Thinking toggle in model menu */
+.claude-rock-thinking-item {
+	display: flex;
+	align-items: center;
+}
+
+.claude-rock-thinking-switch {
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
+.claude-rock-thinking-switch-track {
+	width: 36px;
+	height: 20px;
+	background: var(--background-modifier-border);
+	border-radius: 10px;
+	position: relative;
+	transition: background 0.2s ease;
+	cursor: pointer;
+}
+
+.claude-rock-thinking-switch-track.claude-rock-thinking-switch-on {
+	background: var(--interactive-accent);
+}
+
+.claude-rock-thinking-switch-thumb {
+	width: 16px;
+	height: 16px;
+	background: var(--text-on-accent);
+	border-radius: 50%;
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	transition: transform 0.2s ease;
+}
+
+.claude-rock-thinking-switch-track.claude-rock-thinking-switch-on .claude-rock-thinking-switch-thumb {
+	transform: translateX(16px);
+}
+
 /* Autocomplete scrollbar */
 .claude-rock-autocomplete::-webkit-scrollbar {
 	width: 6px;
@@ -557,6 +923,40 @@
 }
 
 .claude-rock-autocomplete::-webkit-scrollbar-thumb {
+	background: var(--background-modifier-border);
+	border-radius: 3px;
+}
+
+/* Mention Autocomplete - inherits from .claude-rock-autocomplete */
+.claude-rock-mention-autocomplete {
+	display: none;
+	position: absolute;
+	bottom: 100%;
+	left: 0;
+	right: 0;
+	margin-bottom: 4px;
+	max-height: 200px;
+	overflow-y: auto;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	z-index: 100;
+}
+
+.claude-rock-mention-autocomplete.claude-rock-autocomplete-visible {
+	display: block;
+}
+
+.claude-rock-mention-autocomplete::-webkit-scrollbar {
+	width: 6px;
+}
+
+.claude-rock-mention-autocomplete::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.claude-rock-mention-autocomplete::-webkit-scrollbar-thumb {
 	background: var(--background-modifier-border);
 	border-radius: 3px;
 }
@@ -593,3 +993,772 @@
 	padding-top: 16px;
 	border-top: 1px solid var(--background-modifier-border);
 }
+
+/* ============================================================================
+   CLAUDE.md Editor (Settings)
+   ============================================================================ */
+
+.claude-rock-claudemd-container {
+	margin-top: 12px;
+}
+
+.claude-rock-claudemd-textarea {
+	width: 100%;
+	min-height: 200px;
+	padding: 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+	font-size: 13px;
+	line-height: 1.6;
+	resize: vertical;
+}
+
+.claude-rock-claudemd-textarea:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.claude-rock-claudemd-buttons {
+	display: flex;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.claude-rock-claudemd-modal {
+	width: 525px;
+	max-width: 85vw;
+}
+
+.claude-rock-claudemd-modal .claude-rock-claudemd-textarea {
+	min-height: 350px;
+}
+
+/* ============================================================================
+   Context Indicator (session context usage)
+   ============================================================================ */
+
+.claude-rock-context-indicator-btn {
+	display: flex !important;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 6px;
+	cursor: pointer;
+	position: relative;
+	background: transparent;
+	transition: background 0.15s ease;
+}
+
+.claude-rock-context-indicator-btn:hover,
+.claude-rock-context-indicator-btn-active {
+	background: var(--background-modifier-hover);
+}
+
+.claude-rock-context-ring {
+	flex-shrink: 0;
+	display: block;
+	width: 18px;
+	height: 18px;
+}
+
+.claude-rock-context-progress {
+	transition: stroke-dashoffset 0.3s ease, stroke 0.3s ease;
+}
+
+.claude-rock-context-percent {
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	color: var(--text-muted);
+	min-width: 28px;
+	text-align: center;
+}
+
+/* Context Popup (click to open) */
+.claude-rock-context-popup {
+	display: none;
+	position: absolute;
+	bottom: calc(100% + 8px);
+	right: 0;
+	min-width: 200px;
+	padding: 12px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+	z-index: 100;
+	font-size: 13px;
+}
+
+.claude-rock-context-popup-open {
+	display: block;
+}
+
+.claude-rock-context-popup-info {
+	margin-bottom: 12px;
+}
+
+.claude-rock-context-row {
+	padding: 3px 0;
+	color: var(--text-normal);
+	font-size: 12px;
+}
+
+.claude-rock-context-row-main {
+	font-size: 14px;
+	font-weight: 500;
+	padding-bottom: 8px;
+	margin-bottom: 4px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.claude-rock-context-row-info {
+	color: var(--text-muted);
+	font-size: 11px;
+}
+
+.claude-rock-summary-btn {
+	width: 100%;
+	padding: 8px 12px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.claude-rock-summary-btn:hover {
+	background: var(--interactive-accent-hover);
+}
+
+/* ============================================================================
+   Compact Animation Overlay
+   ============================================================================ */
+
+.claude-rock-compact-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	background: var(--background-primary-alt);
+	opacity: 0.95;
+	z-index: 50;
+}
+
+.claude-rock-compact-spinner {
+	width: 24px;
+	height: 24px;
+	border: 2px solid var(--background-modifier-border);
+	border-top-color: var(--interactive-accent);
+	border-radius: 50%;
+	animation: claude-rock-spin 0.8s linear infinite;
+}
+
+@keyframes claude-rock-spin {
+	to { transform: rotate(360deg); }
+}
+
+.claude-rock-compact-text {
+	font-size: 14px;
+	color: var(--text-muted);
+	text-align: center;
+	max-width: 80%;
+}
+
+/* System message */
+.claude-rock-message-system {
+	justify-content: center;
+	padding: 8px 0;
+}
+
+.claude-rock-message-system .claude-rock-message-content {
+	background: none;
+	color: var(--text-muted);
+	font-size: 12px;
+	font-style: italic;
+}
+
+/* ============================================================================
+   Icon-only Action Buttons
+   ============================================================================ */
+
+.claude-rock-action-btn-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.claude-rock-action-btn-icon:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+	border-color: var(--interactive-accent);
+}
+
+.claude-rock-action-btn-icon.claude-rock-action-btn-success {
+	color: var(--text-success);
+	border-color: var(--text-success);
+}
+
+/* ============================================================================
+   Model Indicator
+   ============================================================================ */
+
+.claude-rock-model-indicator {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	font-size: 12px;
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.claude-rock-model-indicator:hover {
+	background: var(--background-modifier-hover);
+	border-color: var(--interactive-accent);
+	color: var(--text-normal);
+}
+
+.claude-rock-model-indicator-locked {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.claude-rock-model-indicator-locked:hover {
+	background: var(--background-primary);
+	border-color: var(--background-modifier-border);
+	color: var(--text-muted);
+}
+
+.claude-rock-model-indicator-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-accent);
+}
+
+.claude-rock-model-indicator-name {
+	font-weight: 500;
+}
+
+/* ============================================================================
+   Tool Steps (Agent Actions)
+   ============================================================================ */
+
+.claude-rock-tool-steps {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px 0;
+	max-width: 90%;
+	align-self: flex-start;
+}
+
+.claude-rock-tool-step {
+	display: flex;
+	flex-direction: column;
+	background: var(--background-secondary-alt);
+	border-radius: 6px;
+	font-size: 12px;
+	color: var(--text-muted);
+	animation: claude-rock-fade-in 0.2s ease;
+	overflow: hidden;
+}
+
+.claude-rock-tool-step-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.claude-rock-tool-step-header:hover {
+	background: var(--background-modifier-hover);
+}
+
+@keyframes claude-rock-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.claude-rock-tool-step-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-accent);
+	flex-shrink: 0;
+}
+
+.claude-rock-tool-step-text {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.claude-rock-tool-step-expand {
+	display: flex;
+	align-items: center;
+	margin-left: auto;
+	color: var(--text-faint);
+	transition: transform 0.2s ease;
+}
+
+.claude-rock-tool-step.expanded .claude-rock-tool-step-expand {
+	transform: rotate(180deg);
+}
+
+.claude-rock-tool-step-details {
+	padding: 8px 12px 10px 36px;
+	background: var(--background-primary);
+	border-top: 1px solid var(--background-modifier-border);
+	font-size: 11px;
+	font-family: var(--font-monospace);
+	color: var(--text-muted);
+}
+
+.claude-rock-tool-step-details div {
+	margin-bottom: 4px;
+}
+
+.claude-rock-tool-step-details div:last-child {
+	margin-bottom: 0;
+}
+
+.claude-rock-tool-step-details pre {
+	margin: 0;
+	padding: 8px;
+	background: var(--background-secondary);
+	border-radius: 4px;
+	font-size: 10px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+/* ============================================================================
+   Thinking Block (Agent Steps)
+   ============================================================================ */
+
+.claude-rock-thinking-block {
+	margin: 8px 0;
+	max-width: 90%;
+	align-self: flex-start;
+}
+
+.claude-rock-thinking-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	background: var(--background-secondary);
+	border-radius: 8px 8px 0 0;
+	border: 1px solid var(--background-modifier-border);
+	border-bottom: none;
+}
+
+.claude-rock-thinking-icon {
+	display: flex;
+	align-items: center;
+	color: var(--text-accent);
+	animation: claude-rock-pulse 2s ease-in-out infinite;
+}
+
+@keyframes claude-rock-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.5; }
+}
+
+.claude-rock-thinking-text {
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--text-muted);
+}
+
+.claude-rock-thinking-steps {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 8px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-top: none;
+	border-radius: 0 0 8px 8px;
+}
+
+.claude-rock-thinking-steps:empty {
+	display: none;
+}
+
+/* Streaming text inside thinking block */
+.claude-rock-streaming-text {
+	padding: 8px 4px;
+	color: var(--text-normal);
+	font-size: 14px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+/* Hide header border-radius when steps exist */
+.claude-rock-thinking-block:has(.claude-rock-thinking-steps:not(:empty)) .claude-rock-thinking-header {
+	border-radius: 8px 8px 0 0;
+}
+
+/* Full border-radius when no steps */
+.claude-rock-thinking-block:has(.claude-rock-thinking-steps:empty) .claude-rock-thinking-header {
+	border-radius: 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Stop animation when thinking is done */
+.claude-rock-thinking-block.claude-rock-thinking-done .claude-rock-thinking-icon {
+	animation: none;
+	opacity: 0.6;
+}
+
+.claude-rock-thinking-block.claude-rock-thinking-done .claude-rock-thinking-text {
+	opacity: 0.6;
+}
+
+/* Hide caret/cursor in thinking blocks */
+.claude-rock-thinking-block {
+	caret-color: transparent;
+	user-select: none;
+}
+
+.claude-rock-thinking-block * {
+	caret-color: transparent;
+}
+
+/* ============================================================================
+   File Name Modal
+   ============================================================================ */
+
+.claude-rock-filename-input {
+	width: 100%;
+	padding: 10px 12px;
+	margin: 12px 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: 14px;
+	font-family: var(--font-text);
+}
+
+.claude-rock-filename-input:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+/* ============================================================================
+   File Attachment
+   ============================================================================ */
+
+/* Attach button */
+.claude-rock-attach-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
+	border: none;
+	background: var(--background-modifier-border);
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.claude-rock-attach-btn:hover {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	transform: scale(1.05);
+}
+
+.claude-rock-attach-btn:active {
+	transform: scale(0.95);
+}
+
+.claude-rock-attach-btn svg {
+	width: 16px;
+	height: 16px;
+}
+
+.claude-rock-file-input-hidden {
+	display: none !important;
+}
+
+/* Context chips for attached files */
+.claude-rock-context-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	background: var(--background-modifier-border);
+	border: none;
+	border-radius: 6px;
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
+.claude-rock-context-chip .claude-rock-context-icon {
+	display: flex;
+	align-items: center;
+	width: 14px;
+	height: 14px;
+	color: var(--text-muted);
+}
+
+.claude-rock-context-chip .claude-rock-context-name {
+	color: var(--text-muted);
+	max-width: 150px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.claude-rock-context-chip .claude-rock-context-remove {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	width: 14px;
+	height: 14px;
+	border: none;
+	background: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+/* ============================================================================
+   Usage Section (Settings)
+   ============================================================================ */
+
+.claude-rock-usage-section {
+	padding: 16px;
+	margin-bottom: 24px;
+	background: var(--background-secondary);
+	border-radius: 8px;
+}
+
+.claude-rock-usage-section h3 {
+	margin-top: 0;
+	margin-bottom: 12px;
+}
+
+.claude-rock-usage-loading {
+	padding: 12px;
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.claude-rock-usage-error {
+	padding: 12px;
+	color: var(--text-error);
+	background: var(--background-modifier-error);
+	border-radius: 4px;
+}
+
+.claude-rock-usage-subscription .setting-item-description {
+	font-weight: 600;
+	color: var(--text-accent);
+}
+
+.claude-rock-usage-period {
+	padding: 8px 0;
+	margin-bottom: 16px;
+	font-size: 0.9em;
+	color: var(--text-muted);
+}
+
+/* Usage statistics */
+.claude-rock-usage-stats {
+	margin-bottom: 16px;
+}
+
+.claude-rock-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+}
+
+.claude-rock-stat-item {
+	text-align: center;
+	padding: 12px 8px;
+	background: var(--background-secondary);
+	border-radius: 8px;
+}
+
+.claude-rock-stat-value {
+	font-size: 1.3em;
+	font-weight: 600;
+	color: var(--text-accent);
+}
+
+.claude-rock-stat-label {
+	font-size: 0.85em;
+	color: var(--text-muted);
+	margin-top: 4px;
+}
+
+/* Inline Stats (compact) */
+.claude-rock-stats-inline {
+	display: flex;
+	gap: 24px;
+	padding: 8px 0;
+}
+
+.claude-rock-stat-inline {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+.claude-rock-stat-inline-label {
+	font-size: 13px;
+	color: var(--text-muted);
+}
+
+.claude-rock-stat-inline-value {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--text-accent);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================================
+   Rate Limit Message
+   ============================================================================ */
+
+.claude-rock-message-rate-limit {
+	align-self: center;
+	max-width: 85%;
+	padding: 16px;
+	background: linear-gradient(135deg, var(--background-modifier-error) 0%, var(--background-secondary) 100%);
+	border: 1px solid var(--text-error);
+	border-radius: 12px;
+}
+
+.claude-rock-rate-limit-content {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.claude-rock-rate-limit-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	background: var(--text-error);
+	color: var(--background-primary);
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.claude-rock-rate-limit-text {
+	flex: 1;
+}
+
+.claude-rock-rate-limit-title {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--text-error);
+	margin-bottom: 4px;
+}
+
+.claude-rock-rate-limit-message {
+	font-size: 13px;
+	color: var(--text-muted);
+	line-height: 1.5;
+}
+
+/* ============================================================================
+   CLI Status Indicator (Settings)
+   ============================================================================ */
+
+.claude-rock-cli-status {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 12px 0;
+	padding: 12px;
+	background: var(--background-secondary);
+	border-radius: 8px;
+}
+
+.claude-rock-cli-status-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+}
+
+.claude-rock-cli-status-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+}
+
+.claude-rock-cli-status-success {
+	color: var(--text-success);
+}
+
+.claude-rock-cli-status-error {
+	color: var(--text-error);
+}
+
+.claude-rock-cli-status-checking {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.claude-rock-cli-refresh-btn {
+	margin-left: auto;
+	padding: 6px 12px;
+	background: var(--background-modifier-border);
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 12px;
+	color: var(--text-muted);
+	transition: all 0.15s ease;
+}
+
+.claude-rock-cli-refresh-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
